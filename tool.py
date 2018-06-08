@@ -1,10 +1,7 @@
-
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 import os
@@ -37,7 +34,7 @@ def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
             frame_bits = (int)(line[len_pos:].split()[2]) * 8
             accum_bits = accum_bits + frame_bits
             frame_idx  = frame_idx + 1
-            if frame_idx % interval_frms == 0:  # accumalated 1 seconds
+            if frame_idx % interval_frms == 0:  # accumulated N seconds
                 bitrate_array.append(accum_bits / check_interval / 1000)
                 time_array.append((frame_idx - 1) / frame_rate)
                 accum_bits = 0

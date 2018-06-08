@@ -48,7 +48,7 @@ class APPPlotBitRateViewTool():
         else:
             self.t_source.insert('0.0', r"D:/input.log")
             self.t_output.insert('0.0', r"D:/output.img")
-            self.t_enc_id.insert('0.0', "0x7f6c5c8f9f80")
+            self.t_enc_id.insert('0.0', "")
             self.t_frame_rate.insert('0.0', "25")
             self.t_interval.insert('0.0', "1")
 
