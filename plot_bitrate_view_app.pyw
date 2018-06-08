@@ -118,7 +118,7 @@ class APPPlotBitRateViewTool():
         self.saveHistory()
         enc_id = self.t_enc_id.get('0.0', END)[0:-1]
         frame_rate  = (int)(self.t_frame_rate.get('0.0', END)[0:-1])
-        check_interval = (int)(self.t_interval.get('0.0', END)[0:-1])
+        check_interval = (float)(self.t_interval.get('0.0', END)[0:-1])
 
         self.progressbar['value'] = 100.0
 

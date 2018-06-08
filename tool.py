@@ -17,7 +17,7 @@ def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
     accum_bits = 0
     bitrate_array = []
     time_array    = []
-    interval_frms = check_interval * frame_rate
+    interval_frms = (int)(check_interval * frame_rate)
     while line:
         try:
             line = line.encode("UTF-8")
@@ -39,7 +39,7 @@ def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
             frame_idx  = frame_idx + 1
             if frame_idx % interval_frms == 0:  # accumalated 1 seconds
                 bitrate_array.append(accum_bits / check_interval / 1000)
-                time_array.append(frame_idx / frame_rate)
+                time_array.append((frame_idx - 1) / frame_rate)
                 accum_bits = 0
 
         line = inf.readline()
@@ -53,27 +53,23 @@ def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval):
     avg_bitrate = sum(bitrate_array) / len(bitrate_array)
     avg_br_arr  = [avg_bitrate, ] * len(bitrate_array)
     max_bitrate = max(bitrate_array)
+    max_bitrate_idx  = bitrate_array.index(max_bitrate)
+    max_bitrate_time = time_array[max_bitrate_idx]
     max_avg_rat = (float)(max_bitrate) / avg_bitrate
-    plt.ylim(0, max(bitrate_array) * 1.5)
-    plt.plot(time_array, bitrate_array, marker='+')
+    yrange      = max_bitrate * 1.5
+    xrange      = max(time_array) - min(time_array)
+    plt.ylim(0, yrange)
+    plt.xlim(min(time_array), max(time_array))
+
+    plt.text(max_bitrate_time + xrange / 50, max_bitrate + yrange / 50, "%.2f kbps, time %s sec"%(max_bitrate, max_bitrate_time)) # show maxbitrate position
+    plt.annotate('', xy=(max_bitrate_time, max_bitrate), xytext=(max_bitrate_time + xrange / 50, max_bitrate + yrange / 50), arrowprops=dict(arrowstyle="->",connectionstyle="arc3"))
+
+    plt.plot(time_array, bitrate_array, marker='.')
     plt.plot(time_array, avg_br_arr)
     plt.xlabel("time(second)", fontproperties=font_set, fontsize = 14)
     plt.ylabel("bitrate(kbp/s)", fontproperties=font_set, fontsize = 14)
-    plt.title("Bitrate interval %d seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 12)
+    plt.title("Bitrate interval %3.1f seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 12)
     plt.grid(True)
-
-    #for cat_value in category_array:
-    #    cat_idx = category_array.index(cat_value)
-    #    ax      = plt.subplot(2, 2, cat_idx + 1)
-    #    plt.xlabel(x_title, fontproperties=font_set, fontsize = 14)
-    #    plt.ylabel(y_title, fontproperties=font_set, fontsize = 14)
-    #    plt.xticks(fontsize=12)
-    #    plt.yticks(fontsize=12)
-    #    corcoef = get_corrcoef(x_array[cat_idx], y_array[cat_idx])[0][1]
-    #    plt.title(category_title + " = %s, corrcoef = %5.3f"%(cat_value, corcoef), fontproperties=font_set, fontsize = 12)
-    #    plt.scatter(x_array[cat_idx], y_array[cat_idx], c='red', marker='+')
-    #    plt.grid(True)
-    #plt.subplots_adjust(left=0.123, right=0.9, bottom=0.1, top=0.9, wspace=0.2, hspace=0.2)
     plt.show()
     #plt.savefig(out_img, format=fileformat, dpi=150)
 
