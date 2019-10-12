@@ -204,15 +204,11 @@ class APPPlotBitRateViewTool():
                 plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
             elif self.str_plot_type.get() == u'vbvbuffer view':
                 time_array, vbv_array = extract_hm_ashevc_vbvinfo(source_file, frame_rate, vbv_init_time, vbv_bitrate)
-                print time_array
-                print vbv_array
                 plot_vbv_arrays(time_array, vbv_array, output_file, vbv_bufsize)
         elif self.str_log_type.get() == u'arcvideo_log':
             xlabel_type = 1
             time_array, bitrate_array = extract_bitrate(source_file, enc_id, frame_rate, check_interval)
             plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
-
-
 
 if __name__ == "__main__":
     root = Tk()
