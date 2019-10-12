@@ -6,7 +6,39 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 import os
 
-def extract_hm_bitrate(inf_name, frame_rate, check_interval_frames):
+def extract_hm_ashevc_vbvinfo(inf_name, frame_rate, vbv_init_time, vbv_bitrate):
+    accum_bits       = 0
+    accum_bits_array = [0, ]
+    time_array       = [0, ]
+    frame_idx        = 1
+    init_frames      = (int)(vbv_init_time * frame_rate / 1000.0)
+    frame_avg_bits   = (int)(vbv_bitrate / frame_rate)
+    inf              = open(inf_name, 'r')
+    line             = inf.readline()
+    # first accumate init frames
+    while frame_idx <= init_frames:
+        accum_bits = accum_bits + frame_avg_bits
+        accum_bits_array.append(accum_bits)
+        time_array.append(frame_idx)
+        frame_idx = frame_idx + 1
+
+    while line:
+        bits_pos = line.find("bits [Y")
+        if bits_pos >= 0:
+            frame_bits = (int)(line.split()[11])
+            accum_bits = accum_bits + frame_avg_bits  # receive bits
+            accum_bits_array.append(accum_bits)
+            time_array.append(frame_idx)
+
+            accum_bits = accum_bits - frame_bits      # remove frame bits
+            accum_bits_array.append(accum_bits)
+            time_array.append(frame_idx)
+
+            frame_idx = frame_idx + 1
+        line = inf.readline()
+    return time_array, accum_bits_array
+
+def extract_hm_ashevc_bitrate(inf_name, frame_rate, check_interval_frames):
     bitrate_array = []
     inf        = open(inf_name, 'r')
     line       = inf.readline()
@@ -95,6 +127,33 @@ def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval, xlabel_typ
     plt.grid(True)
     plt.show()
     #plt.savefig(out_img, format=fileformat, dpi=150)
+
+def plot_vbv_arrays(time_array, vbv_array, out_img, vbv_bufsize):
+    font_set = FontProperties(fname=r"c:\windows\fonts\calibri.ttf", size=15)
+    category_f0 = plt.figure(0, figsize=(20, 10))
+    fileformat  = os.path.splitext(out_img)[1][1:]
+    avg_bitrate = sum(vbv_array) / len(vbv_array)
+    max_bits = max(vbv_array)
+    vbv_bufsz_arr  = [vbv_bufsize, ] * len(vbv_array)
+    max_bits = max(vbv_array)
+    max_bits_idx  = vbv_array.index(max_bits)
+    max_bits_time = time_array[max_bits_idx]
+    yrange      = max_bits * 1.5
+    xrange      = max(time_array) - min(time_array)
+    plt.ylim(0, yrange)
+    plt.xlim(min(time_array), max(time_array))
+
+    plt.text(max_bits_time + xrange / 50, max_bits + yrange / 50, "%.2f bits, time %s sec"%(max_bits, max_bits_time)) # show maxbits position
+    plt.annotate('', xy=(max_bits_time, max_bits), xytext=(max_bits_time + xrange / 50, max_bits + yrange / 50), arrowprops=dict(arrowstyle="->",connectionstyle="arc3"))
+
+    plt.plot(time_array, vbv_array, marker='.')
+    plt.plot(time_array, vbv_bufsz_arr)
+
+    plt.xlabel("frame number", fontproperties=font_set, fontsize = 14)
+    plt.ylabel("bits", fontproperties=font_set, fontsize = 14)
+    #plt.title("Bitrate interval %3.1f seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 12)
+    plt.grid(True)
+    plt.show()
 
 def CheckFile(FileName):
     if not os.path.exists(FileName):
