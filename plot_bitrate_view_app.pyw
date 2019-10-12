@@ -61,6 +61,22 @@ class APPPlotBitRateViewTool():
         f_history.write(u"intval: %s\n"%self.t_interval.get('0.0', END)[0:-1])
         f_history.close()
 
+    def updateOptionFrame(self, var):
+        if var == u'hm_log':
+            self.l_frame_rate.grid(row = 1, column = 3, padx = 2, pady = 3)
+            self.t_frame_rate.grid(row = 1, column = 4, padx = 5, pady = 3)
+            self.l_interval.config(text=u'check interval\n(frames)')
+            self.l_interval.grid(row = 1, column = 1, padx = 2, pady = 3)
+            self.t_interval.grid(row = 1, column = 2, padx = 5, pady = 3)
+        elif var == u'arcvideo_log':
+            self.l_enc_id.grid(row = 1, column = 1, padx = 2, pady = 3)
+            self.t_enc_id.grid(row = 1, column = 2, padx = 15, pady = 3)
+            self.l_frame_rate.grid(row = 1, column = 3, padx = 2, pady = 3)
+            self.t_frame_rate.grid(row = 1, column = 4, padx = 5, pady = 3)
+            self.l_interval.config(text=u'check interval\n(seconds)')
+            self.l_interval.grid(row = 2, column = 1, padx = 2, pady = 3)
+            self.t_interval.grid(row = 2, column = 2, padx = 5, pady = 3)
+
     def __init__(self, master):
         self.font = tkFont.Font(family="Courier", size=9)
 
@@ -81,6 +97,10 @@ class APPPlotBitRateViewTool():
         self.b_output  = Button(self.OpenFileFrame, text=u'Save As', relief=button_relief, command=lambda: self.openOutputFileDialog())
 
         ##### Define widgets within OptionsFrame
+        self.l_log_type = Label(self.OptionsFrame, text=u'log type', fg='blue')
+        self.str_log_type = StringVar()
+        self.str_log_type.set(u'hm_log')
+        self.o_log_type = OptionMenu(self.OptionsFrame, self.str_log_type, u'hm_log', u'arcvideo_log', command=self.updateOptionFrame) # set update function to update UI
         self.l_enc_id = Label(self.OptionsFrame, text=u'          enc id', fg='blue')
         self.t_enc_id = Text (self.OptionsFrame, height = 1, width = 15, relief = text_relief, fg='blue', font=self.font)
         self.l_frame_rate = Label(self.OptionsFrame, text=u'      frame rate', fg='blue')
@@ -97,12 +117,9 @@ class APPPlotBitRateViewTool():
         self.b_output.grid (row = 1, column = 2, padx = 5, pady = 5, ipady = 1)
 
         ##### Place widgets within OptionFrame
-        self.l_enc_id.grid(row = 0, column = 1, padx = 2, pady = 3)
-        self.t_enc_id.grid(row = 0, column = 2, padx = 15, pady = 3)
-        self.l_frame_rate.grid(row = 0, column = 3, padx = 2, pady = 3)
-        self.t_frame_rate.grid(row = 0, column = 4, padx = 5, pady = 3)
-        self.l_interval.grid(row = 1, column = 1, padx = 2, pady = 3)
-        self.t_interval.grid(row = 1, column = 2, padx = 5, pady = 3)
+        self.l_log_type.grid(row = 0, column = 1, padx = 2, pady = 3)
+        self.o_log_type.grid(row = 0, column = 2, padx = 2, pady = 3)
+        self.updateOptionFrame(self.str_log_type.get()) # update detailed options
 
         ##### Place widgets within OperationsFrame
         self.progressbar = ttk.Progressbar(self.OperationsFrame, orient=HORIZONTAL, length = 380, mode='determinate')
@@ -121,9 +138,14 @@ class APPPlotBitRateViewTool():
         check_interval = (float)(self.t_interval.get('0.0', END)[0:-1])
 
         self.progressbar['value'] = 100.0
-
-        time_array, bitrate_array = extract_bitrate(source_file, enc_id, frame_rate, check_interval)
-        plot_arrays(time_array, bitrate_array, output_file, check_interval)
+        xlabel_type = 0
+        if self.str_log_type.get() == u'hm_log':
+            time_array, bitrate_array = extract_hm_bitrate(source_file, frame_rate, check_interval)
+            print time_array, bitrate_array
+        elif self.str_log_type.get() == u'arcvideo_log':
+            xlabel_type = 1
+            time_array, bitrate_array = extract_bitrate(source_file, enc_id, frame_rate, check_interval)
+        plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
 
 
 if __name__ == "__main__":

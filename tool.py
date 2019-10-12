@@ -6,6 +6,29 @@ import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
 import os
 
+def extract_hm_bitrate(inf_name, frame_rate, check_interval_frames):
+    bitrate_array = []
+    inf        = open(inf_name, 'r')
+    line       = inf.readline()
+    frame_idx  = 0
+    accum_bits = 0
+    bitrate_array = []
+    time_array    = []
+    interval_frms = check_interval_frames
+    while line:
+        bits_pos = line.find("bits [Y")
+        if bits_pos >= 0:
+            frame_bits = (int)(line.split()[11])
+            accum_bits = accum_bits + frame_bits
+            frame_idx  = frame_idx + 1
+            if frame_idx % interval_frms == 0: # accumulated N seconds
+                bitrate_array.append(accum_bits / (check_interval_frames / frame_rate) / 1000)
+                #time_array.append((frame_idx - 1) / frame_rate)
+                time_array.append(frame_idx)
+                accum_bits = 0
+        line = inf.readline()
+    return time_array, bitrate_array
+
 def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
     bitrate_array = []
     inf        = open(inf_name, 'r')
@@ -43,7 +66,7 @@ def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
 
     return time_array, bitrate_array
 
-def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval):
+def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval, xlabel_type):
     font_set = FontProperties(fname=r"c:\windows\fonts\calibri.ttf", size=15)
     category_f0 = plt.figure(0, figsize=(20, 10))
     fileformat  = os.path.splitext(out_img)[1][1:]
@@ -63,7 +86,10 @@ def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval):
 
     plt.plot(time_array, bitrate_array, marker='.')
     plt.plot(time_array, avg_br_arr)
-    plt.xlabel("time(second)", fontproperties=font_set, fontsize = 14)
+    if xlabel_type == 0:
+        plt.xlabel("frame number", fontproperties=font_set, fontsize = 14)
+    elif xlabel_type == 1:
+        plt.xlabel("time(second)", fontproperties=font_set, fontsize = 14)
     plt.ylabel("bitrate(kbp/s)", fontproperties=font_set, fontsize = 14)
     plt.title("Bitrate interval %3.1f seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 12)
     plt.grid(True)
