@@ -120,10 +120,12 @@ def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval, xlabel_typ
     plt.plot(time_array, avg_br_arr)
     if xlabel_type == 0:
         plt.xlabel("frame number", fontproperties=font_set, fontsize = 14)
+        plt.title("Bitrate interval %d frames\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 16)
     elif xlabel_type == 1:
         plt.xlabel("time(second)", fontproperties=font_set, fontsize = 14)
+        plt.title("Bitrate interval %3.1f seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 16)
     plt.ylabel("bitrate(kbp/s)", fontproperties=font_set, fontsize = 14)
-    plt.title("Bitrate interval %3.1f seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 12)
+
     plt.grid(True)
     plt.show()
     #plt.savefig(out_img, format=fileformat, dpi=150)
@@ -157,7 +159,7 @@ def plot_vbv_arrays(time_array, vbv_array, out_img, vbv_bufsize, init_frames):
 
     plt.xlabel("frame number", fontproperties=font_set, fontsize = 14)
     plt.ylabel("bits", fontproperties=font_set, fontsize = 14)
-    plt.title("vbv max_value = %6.1f kbits, min_value = %6.1f kbits\n max - min = %6.1f kbits"%(max_bits / 1000.0, min_bits / 1000.0, (max_bits - min_bits) / 1000.0), fontproperties=font_set, fontsize = 12)
+    plt.title("vbv max_value = %6.1f kbits, min_value = %6.1f kbits\n max - min = %6.1f kbits"%(max_bits / 1000.0, min_bits / 1000.0, (max_bits - min_bits) / 1000.0), fontproperties=font_set, fontsize = 16)
     plt.grid(True)
     plt.show()
 
