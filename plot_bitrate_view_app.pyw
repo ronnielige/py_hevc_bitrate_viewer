@@ -141,7 +141,7 @@ class APPPlotBitRateViewTool():
         ##### Define widgets within OptionsFrame
         self.l_plot_type = Label(self.OptionsFrame, text=u'      plot type', fg='blue')
         self.str_plot_type = StringVar()
-        self.str_plot_type.set(u'bitrate viewer')
+        self.str_plot_type.set(u'bitrate   view')
         self.o_plot_type = OptionMenu(self.OptionsFrame, self.str_plot_type, u'bitrate   view', u'vbvbuffer view', command=self.updateOptionFrame) # set update function to update UI
         self.l_vbv_init_time = Label(self.OptionsFrame, text=u'vbv_init_time\n(ms)', fg='blue')
         self.t_vbv_init_time = Text (self.OptionsFrame, height = 1, width = 15, relief = text_relief, fg='blue', font=self.font)
