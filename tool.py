@@ -128,30 +128,36 @@ def plot_arrays(time_array, bitrate_array, out_img, bitrate_interval, xlabel_typ
     plt.show()
     #plt.savefig(out_img, format=fileformat, dpi=150)
 
-def plot_vbv_arrays(time_array, vbv_array, out_img, vbv_bufsize):
+def plot_vbv_arrays(time_array, vbv_array, out_img, vbv_bufsize, init_frames):
     font_set = FontProperties(fname=r"c:\windows\fonts\calibri.ttf", size=15)
     category_f0 = plt.figure(0, figsize=(20, 10))
     fileformat  = os.path.splitext(out_img)[1][1:]
-    avg_bitrate = sum(vbv_array) / len(vbv_array)
-    max_bits = max(vbv_array)
     vbv_bufsz_arr  = [vbv_bufsize, ] * len(vbv_array)
+    vbv_bufzero_arr = [0, ] * len(vbv_array)
     max_bits = max(vbv_array)
     max_bits_idx  = vbv_array.index(max_bits)
     max_bits_time = time_array[max_bits_idx]
-    yrange      = max_bits * 1.5
+    min_bits = min(vbv_array[init_frames:])  # exclude the vbv init frames
+    min_bits_idx = vbv_array.index(min_bits)
+    min_bits_time = time_array[min_bits_idx]
+    yuprange    = max_bits * 1.5
+    ydownrange  = min(0, 1.2 * min_bits)
     xrange      = max(time_array) - min(time_array)
-    plt.ylim(0, yrange)
+    plt.ylim(ydownrange, yuprange)
     plt.xlim(min(time_array), max(time_array))
 
-    plt.text(max_bits_time + xrange / 50, max_bits + yrange / 50, "%.2f bits, time %s sec"%(max_bits, max_bits_time)) # show maxbits position
-    plt.annotate('', xy=(max_bits_time, max_bits), xytext=(max_bits_time + xrange / 50, max_bits + yrange / 50), arrowprops=dict(arrowstyle="->",connectionstyle="arc3"))
+    plt.text(max_bits_time + xrange / 50, max_bits + yuprange / 50, "%.2f kbit, frame %s"%(max_bits / 1000.0, max_bits_time)) # show maxbits position
+    plt.annotate('', xy=(max_bits_time, max_bits), xytext=(max_bits_time + xrange / 50, max_bits + yuprange / 50), arrowprops=dict(arrowstyle="->",connectionstyle="arc3"))
 
     plt.plot(time_array, vbv_array, marker='.')
     plt.plot(time_array, vbv_bufsz_arr)
 
+    plt.plot(time_array, vbv_array, marker='.')
+    plt.plot(time_array, vbv_bufzero_arr)
+
     plt.xlabel("frame number", fontproperties=font_set, fontsize = 14)
     plt.ylabel("bits", fontproperties=font_set, fontsize = 14)
-    #plt.title("Bitrate interval %3.1f seconds\n Average, Maximum bitrate = %d kbps, %d kbps\n max / avg = %4.2f"%(bitrate_interval, avg_bitrate, max_bitrate, max_avg_rat), fontproperties=font_set, fontsize = 12)
+    plt.title("vbv max_value = %6.1f kbits, min_value = %6.1f kbits\n max - min = %6.1f kbits"%(max_bits / 1000.0, min_bits / 1000.0, (max_bits - min_bits) / 1000.0), fontproperties=font_set, fontsize = 12)
     plt.grid(True)
     plt.show()
 

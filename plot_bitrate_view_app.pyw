@@ -192,6 +192,7 @@ class APPPlotBitRateViewTool():
         frame_rate  = (int)(self.t_frame_rate.get('0.0', END)[0:-1])
         check_interval = (float)(self.t_interval.get('0.0', END)[0:-1])
         vbv_init_time  = (int)(self.t_vbv_init_time.get('0.0', END)[0:-1])
+        init_frames    = (int)(vbv_init_time * frame_rate / 1000.0)
         vbv_bitrate    = 1000 * (int)(self.t_vbv_max_bitrate.get('0.0', END)[0:-1])
         vbv_bufsize    = 1000 * (int)(self.t_vbv_bufsize.get('0.0', END)[0:-1])
         self.progressbar['value'] = 100.0
@@ -204,7 +205,7 @@ class APPPlotBitRateViewTool():
                 plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
             elif self.str_plot_type.get() == u'vbvbuffer view':
                 time_array, vbv_array = extract_hm_ashevc_vbvinfo(source_file, frame_rate, vbv_init_time, vbv_bitrate)
-                plot_vbv_arrays(time_array, vbv_array, output_file, vbv_bufsize)
+                plot_vbv_arrays(time_array, vbv_array, output_file, vbv_bufsize, init_frames)
         elif self.str_log_type.get() == u'arcvideo_log':
             xlabel_type = 1
             time_array, bitrate_array = extract_bitrate(source_file, enc_id, frame_rate, check_interval)
