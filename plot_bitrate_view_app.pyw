@@ -2,6 +2,7 @@
 from   Tkinter import *
 import tkFont
 from   tkFileDialog import *
+from   tkMessageBox import *
 import ttk
 import codecs
 from tool import *
@@ -196,10 +197,11 @@ class APPPlotBitRateViewTool():
         vbv_bitrate    = 1000 * (int)(self.t_vbv_max_bitrate.get('0.0', END)[0:-1])
         vbv_bufsize    = 1000 * (int)(self.t_vbv_bufsize.get('0.0', END)[0:-1])
         self.progressbar['value'] = 100.0
+        
         xlabel_type = 0
-
-        if self.str_log_type.get() == u'hm_log' or self.str_log_type.get() == u'ashevc_log':
-            xlabel_type = 0
+        if not os.path.exists(source_file):
+            showinfo("Error", u'Source file %s not exists!'%source_file)
+        elif self.str_log_type.get() == u'hm_log' or self.str_log_type.get() == u'ashevc_log':
             if self.str_plot_type.get() == u'bitrate   view':
                 time_array, bitrate_array = extract_hm_ashevc_bitrate(source_file, frame_rate, check_interval)
                 plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
