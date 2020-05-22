@@ -97,7 +97,7 @@ class APPPlotBitRateViewTool():
                 self.t_vbv_max_bitrate.grid_remove()
                 self.l_vbv_bufsize.grid_remove()
                 self.t_vbv_bufsize.grid_remove()
-        elif self.str_log_type.get() == u'arcvideo_log':
+        elif self.str_log_type.get() == u'arcvideo_hevc_log' or self.str_log_type.get() == u'arcvideo_avs3_log':
             self.l_enc_id.grid(row = 1, column = 1, padx = 2, pady = 3)
             self.t_enc_id.grid(row = 1, column = 2, padx = 15, pady = 3)
             self.l_frame_rate.grid(row = 1, column = 3, padx = 2, pady = 3)
@@ -153,8 +153,8 @@ class APPPlotBitRateViewTool():
 
         self.l_log_type = Label(self.OptionsFrame, text=u'      log type', fg='blue')
         self.str_log_type = StringVar()
-        self.str_log_type.set(u'hm_log')
-        self.o_log_type = OptionMenu(self.OptionsFrame, self.str_log_type, u'hm_log', u'ashevc_log', u'arcvideo_log', command=self.updateOptionFrame) # set update function to update UI
+        self.str_log_type.set(u'arcvideo_avs3_log')
+        self.o_log_type = OptionMenu(self.OptionsFrame, self.str_log_type, u'hm_log', u'ashevc_log', u'arcvideo_hevc_log', u'arcvideo_avs3_log', command=self.updateOptionFrame) # set update function to update UI
         self.l_enc_id = Label(self.OptionsFrame, text=u'    enc id', fg='blue')
         self.t_enc_id = Text (self.OptionsFrame, height = 1, width = 15, relief = text_relief, fg='blue', font=self.font)
         self.l_frame_rate = Label(self.OptionsFrame, text=u'    frame rate', fg='blue')
@@ -197,7 +197,7 @@ class APPPlotBitRateViewTool():
         vbv_bitrate    = 1000 * (int)(self.t_vbv_max_bitrate.get('0.0', END)[0:-1])
         vbv_bufsize    = 1000 * (int)(self.t_vbv_bufsize.get('0.0', END)[0:-1])
         self.progressbar['value'] = 100.0
-        
+
         xlabel_type = 0
         if not os.path.exists(source_file):
             showinfo("Error", u'Source file %s not exists!'%source_file)
@@ -208,14 +208,26 @@ class APPPlotBitRateViewTool():
             elif self.str_plot_type.get() == u'vbvbuffer view':
                 time_array, vbv_array = extract_hm_ashevc_vbvinfo(source_file, frame_rate, vbv_init_time, vbv_bitrate)
                 plot_vbv_arrays(time_array, vbv_array, output_file, vbv_bufsize, init_frames)
-        elif self.str_log_type.get() == u'arcvideo_log':
-            xlabel_type = 1
-            time_array, bitrate_array = extract_bitrate(source_file, enc_id, frame_rate, check_interval)
-            plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
+        elif self.str_log_type.get() == u'arcvideo_hevc_log':
+            if self.str_plot_type.get() == u'bitrate   view':
+                xlabel_type = 1
+                time_array, bitrate_array = extract_arcvideo_hevc_bitrate(source_file, enc_id, frame_rate, check_interval)
+                plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
+            elif self.str_plot_type.get() == u'vbvbuffer view':
+                time_array, vbv_array = extract_arcvideo_hevc_vbvinfo(source_file, enc_id, frame_rate, vbv_init_time, vbv_bitrate)
+                plot_vbv_arrays(time_array, vbv_array, output_file, vbv_bufsize, init_frames)
+        elif self.str_log_type.get() == u'arcvideo_avs3_log':
+            if self.str_plot_type.get() == u'bitrate   view':
+                xlabel_type = 1
+                time_array, bitrate_array = extract_arcvideo_avs3_bitrate(source_file, frame_rate, check_interval)
+                plot_arrays(time_array, bitrate_array, output_file, check_interval, xlabel_type)
+            elif self.str_plot_type.get() == u'vbvbuffer view':
+                time_array, vbv_array = extract_arcvideo_avs3_vbvinfo(source_file, frame_rate, vbv_init_time, vbv_bitrate)
+                plot_vbv_arrays(time_array, vbv_array, output_file, vbv_bufsize, init_frames)
 
 if __name__ == "__main__":
     root = Tk()
-    root.title(u'Hevc Bitrate Viewer Based on python')
+    root.title(u'Bitrate Viewer Based on python')
     root.resizable(0, 0) # can't resize
     root.rowconfigure   (0, weight=1)
     root.columnconfigure(0, weight=1)

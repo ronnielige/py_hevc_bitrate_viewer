@@ -1,4 +1,5 @@
 import sys
+import re
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -61,7 +62,53 @@ def extract_hm_ashevc_bitrate(inf_name, frame_rate, check_interval_frames):
         line = inf.readline()
     return time_array, bitrate_array
 
-def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
+def extract_arcvideo_hevc_vbvinfo(inf_name, enc_id, frame_rate, vbv_init_time, vbv_bitrate):
+    accum_bits       = 0
+    accum_bits_array = [0, ]
+    time_array       = [0, ]
+    frame_idx        = 1
+    init_frames      = (int)(vbv_init_time * frame_rate / 1000.0)
+    frame_avg_bits   = (int)(vbv_bitrate / frame_rate)
+    inf              = open(inf_name, 'r')
+    line             = inf.readline()
+    # first accumate init frames
+    while frame_idx <= init_frames:
+        accum_bits = accum_bits + frame_avg_bits
+        accum_bits_array.append(accum_bits)
+        time_array.append(frame_idx)
+        frame_idx = frame_idx + 1
+
+    while line:
+        try:
+            line = line.encode("UTF-8")
+        except Exception, e:
+            line = inf.readline()
+            print "line %s transcoder to utf-8 error"%line
+            continue
+
+        enc_id_pos = line.find("%s::DELIVER:ThreadID"%enc_id)
+        if enc_id_pos >= 0:
+            len_pos = line.find("length")
+            if len_pos < 0:
+                print "Encounter an abnormal line: %s, can't find length"%(line[:-1])
+                line = inf.readline()
+                continue
+
+            frame_bits = (int)(line[len_pos:].split()[2]) * 8
+            accum_bits = accum_bits + frame_avg_bits  # receive bits
+            accum_bits_array.append(accum_bits)
+            time_array.append(frame_idx)
+
+            accum_bits = accum_bits - frame_bits      # remove frame bits
+            accum_bits_array.append(accum_bits)
+            time_array.append(frame_idx)
+
+            frame_idx = frame_idx + 1
+        line = inf.readline()
+
+    return time_array, accum_bits_array
+
+def extract_arcvideo_hevc_bitrate(inf_name, enc_id, frame_rate, check_interval):
     bitrate_array = []
     inf        = open(inf_name, 'r')
     line       = inf.readline()
@@ -87,6 +134,78 @@ def extract_bitrate(inf_name, enc_id, frame_rate, check_interval):
                 continue
 
             frame_bits = (int)(line[len_pos:].split()[2]) * 8
+            accum_bits = accum_bits + frame_bits
+            frame_idx  = frame_idx + 1
+            if frame_idx % interval_frms == 0:  # accumulated N seconds
+                bitrate_array.append(accum_bits / check_interval / 1000)
+                time_array.append((frame_idx - 1) / frame_rate)
+                accum_bits = 0
+
+        line = inf.readline()
+
+    return time_array, bitrate_array
+
+def extract_arcvideo_avs3_vbvinfo(inf_name, frame_rate, vbv_init_time, vbv_bitrate):
+    frame_len_pattern = r"(consumedtime).*(len).*?(\d+)"
+    accum_bits       = 0
+    accum_bits_array = [0, ]
+    time_array       = [0, ]
+    frame_idx        = 1
+    init_frames      = (int)(vbv_init_time * frame_rate / 1000.0)
+    frame_avg_bits   = (int)(vbv_bitrate / frame_rate)
+    inf              = open(inf_name, 'r')
+    line             = inf.readline()
+    # first accumate init frames
+    while frame_idx <= init_frames:
+        accum_bits = accum_bits + frame_avg_bits
+        accum_bits_array.append(accum_bits)
+        time_array.append(frame_idx)
+        frame_idx = frame_idx + 1
+
+    while line:
+        try:
+            line = line.encode("UTF-8")
+        except Exception, e:
+            line = inf.readline()
+            print "line %s transcoder to utf-8 error"%line
+            continue
+
+        frame_len_object = re.search(frame_len_pattern, line)
+        if frame_len_object != None:
+            frame_bits = (int)(frame_len_object.group(3)) * 8
+            accum_bits = accum_bits + frame_avg_bits  # receive bits
+            accum_bits_array.append(accum_bits)
+            time_array.append(frame_idx)
+
+            accum_bits = accum_bits - frame_bits      # remove frame bits
+            accum_bits_array.append(accum_bits)
+            time_array.append(frame_idx)
+
+            frame_idx = frame_idx + 1
+        line = inf.readline()
+
+    return time_array, accum_bits_array
+
+def extract_arcvideo_avs3_bitrate(inf_name, frame_rate, check_interval):
+    frame_len_pattern = r"(consumedtime).*(len).*?(\d+)"
+    inf        = open(inf_name, 'r')
+    line       = inf.readline()
+    frame_idx  = 0
+    accum_bits = 0
+    bitrate_array = []
+    time_array    = []
+    interval_frms = (int)(check_interval * frame_rate)
+    while line:
+        try:
+            line = line.encode("UTF-8")
+        except Exception, e:
+            line = inf.readline()
+            print "line %s transcoder to utf-8 error"%line
+            continue
+
+        frame_len_object = re.search(frame_len_pattern, line)
+        if frame_len_object != None:
+            frame_bits = (int)(frame_len_object.group(3)) * 8
             accum_bits = accum_bits + frame_bits
             frame_idx  = frame_idx + 1
             if frame_idx % interval_frms == 0:  # accumulated N seconds
@@ -143,7 +262,7 @@ def plot_vbv_arrays(time_array, vbv_array, out_img, vbv_bufsize, init_frames):
     min_bits_idx = vbv_array.index(min_bits)
     min_bits_time = time_array[min_bits_idx]
     yuprange    = max_bits * 1.5
-    ydownrange  = min(0, 1.2 * min_bits)
+    ydownrange  = min(0 - max_bits / 10.0, 1.2 * min_bits)
     xrange      = max(time_array) - min(time_array)
     plt.ylim(ydownrange, yuprange)
     plt.xlim(min(time_array), max(time_array))
